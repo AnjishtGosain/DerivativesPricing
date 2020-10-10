@@ -1,28 +1,119 @@
-#include "PartB.h"
-#include <vector>
-#include <memory>
+#include "PricingAPI.h"
+#include "../Models/BlackScholes.h"
+#include "../Models/BlackScholesWithDividend.h"
 #include "../Models/BlackScholesSingleNormalJump.h"
+#include "../Models/BlackScholesDoubleNormalJump.h"
 #include "../Enumerations/UnderlyingCode.h"
 #include "../Pricers/TreePricer.h"
-#include <functional>
-#include "../Optimisers/DifferentialEvolution.h"
-#include <unordered_map>
-#include <map>
 
 using namespace std;
 using namespace models;
 using namespace instruments;
 using namespace enumerations;
 using namespace pricers;
-using namespace optimisers;
-using namespace std::placeholders;
+
+// Black Scholes price for an American option. The last parameter determines the length of the time step in the tree
+double PricingAPI::price(const double & strike, const bool & is_call, const double & s_0, const double & r, const double & q, const double & T, 
+	const double & sigma, const double& timeStepSize)
+{
+	// Construct the model
+	auto underlyingCode = UnderlyingCode::BHP; // this is just a dummy
+	auto blackScholesModel = make_shared<models::BlackScholes>(q, r, sigma, s_0, underlyingCode);
+
+	// Construct Vanilla Option
+	auto vanillaOptionsPtr = constructVanillaOptionsPtr(strike, is_call, T);
+
+	// Construct tree and get price
+	auto price = constructTreePrice(blackScholesModel, timeStepSize, vanillaOptionsPtr);
+	return price;
+}
+
+// Black Scholes with Dividend price for an American option. The last parameter determines the length of the time step in the tree
+double PricingAPI::price(const double & strike, const bool & is_call, const double & s_0, const double & r, const double & q, const double & T, 
+	const double & sigma, const double& t_div, const double& div, const double& timeStepSize)
+{
+	// Construct the model
+	auto underlyingCode = UnderlyingCode::BHP; // this is just a dummy
+	auto blackScholesWithDividendModel = make_shared<models::BlackScholesWithDividend>(q, r, sigma, s_0, underlyingCode, t_div, div);
+
+	// Construct Vanilla Option
+	auto vanillaOptionsPtr = constructVanillaOptionsPtr(strike, is_call, T);
+
+	// Construct tree and get price
+	auto price = constructTreePrice(blackScholesWithDividendModel, timeStepSize, vanillaOptionsPtr);
+	return price;
+}
+
+// Black Scholes with Dividend and single normal jump price for an American option. 
+double PricingAPI::price(const double & strike, const bool & is_call, const double & s_0, const double & r, const double & q, const double & T, 
+	const double & sigma, const double& t_div, const double& div, const double& jumpTime, const double& jumpMean, const double& jumpVol, 
+	const double& timeStepSize)
+{
+	// Construct the model
+	auto underlyingCode = UnderlyingCode::BHP; // this is just a dummy
+	auto blackScholesSingleNormalJumpModel = make_shared<models::BlackScholesSingleNormalJump>(q, r, sigma, s_0, underlyingCode, t_div, div,
+		jumpTime, jumpMean, jumpVol);
+
+	// Construct Vanilla Option
+	auto vanillaOptionsPtr = constructVanillaOptionsPtr(strike, is_call, T);
+
+	// Construct tree and get price
+	auto price = constructTreePrice(blackScholesSingleNormalJumpModel, timeStepSize, vanillaOptionsPtr);
+	return price;
+}
+
+// Black Scholes with Dividend and double normal jump price for an American option. 
+double PricingAPI::price(const double & strike, const bool & is_call, const double & s_0, const double & r, const double & q, const double & T, 
+	const double & sigma, const double& t_div, const double& div, const double& jumpTime, const double& jumpMean1, const double& jumpVol1, 
+	const double& jumpMean2, const double& jumpVol2, const double& bernoulliProbability, const double& timeStepSize)
+{
+	// Construct the model
+	auto underlyingCode = UnderlyingCode::BHP; // this is just a dummy
+	auto blackScholesDoubleNormalJumpModel = make_shared<models::BlackScholesDoubleNormalJump>(q, r, sigma, s_0, underlyingCode, t_div, div,
+		jumpTime, jumpMean1, jumpVol1, jumpMean2, jumpVol2, bernoulliProbability);
+
+	// Construct Vanilla Option
+	auto vanillaOptionsPtr = constructVanillaOptionsPtr(strike, is_call, T);
+
+	// Construct tree and get price
+	auto price = constructTreePrice(blackScholesDoubleNormalJumpModel, timeStepSize, vanillaOptionsPtr);
+	return price;
+}
 
 
-// Functions for Part B Question 5
+
+// Helper function which structures the option contract into the required form for pricing
+std::shared_ptr<std::vector<std::shared_ptr<instruments::VanillaOption>>> PricingAPI::constructVanillaOptionsPtr(const double & strike, const bool & is_call, 
+	const double & T)
+{
+	auto underlyingCode = UnderlyingCode::BHP; // this is just a dummy
+	auto optionRight = is_call ? OptionRight::call : OptionRight::put;
+	auto exerciseType = ExerciseType::american;
+	auto vanillaOption = make_shared<VanillaOption>(strike, T, exerciseType, optionRight, underlyingCode);
+
+	vector<shared_ptr<VanillaOption>> vanillaOptions{ vanillaOption };
+	auto vanillaOptionsPtr = make_shared < vector<shared_ptr<VanillaOption>>>(move(vanillaOptions));
+	return vanillaOptionsPtr;
+}
+
+// Helper function which constructs the pricing tree given a model, and then computes the price
+double PricingAPI::constructTreePrice(const std::shared_ptr<models::ITreeModel>& model, const double& timeStepSize, 
+	const std::shared_ptr<std::vector<std::shared_ptr<instruments::VanillaOption>>>& vanillaOptionsPtr)
+{
+	// Construct Pricer
+	TreePricer treePricer(model);
+
+	// Price option
+	auto price = treePricer.priceWithRichardsonExtrapolation(timeStepSize, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
+	return *price->at(0);
+}
+
+
+// Functions for Pricing Problem 1
 // ----------------------------------------------------------------------------
 
 
-void PartB::priceVanillaOptionsBlackScholesDoubleNormalJumpModel(const std::string & jsonInputFilePath, 
+void PricingAPI::priceVanillaOptionsBlackScholesDoubleNormalJumpModel(const std::string & jsonInputFilePath, 
 	const std::string & jsonOutputFilePath,  
 	const double & initialUnderlyingPrice, const double & jumpMean, const int & nTimeSteps)
 {
@@ -149,7 +240,7 @@ void PartB::priceVanillaOptionsBlackScholesDoubleNormalJumpModel(const std::stri
 	return;
 }
 
-void PartB::priceAmericanOptionsBlackScholesSingleNormalJumpModel(const std::string & jsonInputFilePath, const std::string & jsonOutputFilePath, const double & costOfCarry, 
+void PricingAPI::priceAmericanOptionsBlackScholesSingleNormalJumpModel(const std::string & jsonInputFilePath, const std::string & jsonOutputFilePath, const double & costOfCarry, 
 	const double & discountRate, const double & impliedVolatility, const double & initialUnderlyingPrice, const double & dividendTime, 
 	const double & dividendAmount, const double & jumpTime, const double & jumpMean, const double & jumpVolatility, const int & nTimeSteps)
 {
@@ -173,112 +264,3 @@ void PartB::priceAmericanOptionsBlackScholesSingleNormalJumpModel(const std::str
 	return;
 }
 
-
-// Functions for Part B Question 6
-// ----------------------------------------------------------------------------
-
-// Function which revalues a set of options, and returns to mean squared error of the valuation.
-double PartB::meanSquaredErrorPartB6(std::shared_ptr<std::vector<std::shared_ptr<double>>> optionPricesPtr,
-	std::shared_ptr<std::vector<std::shared_ptr<instruments::VanillaOption>>> optionsPtr,
-	const double& costOfCarry, const double& discountRate, const double& initialUnderlyingPrice,
-	const double& dividendTime, const double& dividendAmount, const double& jumpTime, const double& jumpMean, const int& nTimeSteps,
-	const std::shared_ptr<std::vector<double>>& volatilitiesToOptimise, const int& D)
-{
-	if (optionsPtr->size() != optionPricesPtr->size())
-		throw invalid_argument("The prices do not correspond to the provided options.");
-
-	// Construct the model object
-	auto blackScholesSingleNormalJumpModel = make_shared<models::BlackScholesSingleNormalJump>(costOfCarry, discountRate, volatilitiesToOptimise->at(0), 
-		initialUnderlyingPrice,	UnderlyingCode::BHP, dividendTime, dividendAmount, jumpTime, jumpMean, volatilitiesToOptimise->at(1));
-
-	// Construct the pricer object
-	TreePricer treePricer(blackScholesSingleNormalJumpModel);
-
-	auto meanSquareError = 0.0;
-	auto averagingFactor = 1.0 / (double)optionsPtr->size();
-	auto treePrice = treePricer.priceWithRichardsonExtrapolation(nTimeSteps, optionsPtr, true, Implementation::One, 6.0, -6.0);
-	for (int i = 0; i < optionsPtr->size(); i++)
-		meanSquareError += pow((*treePrice->at(i) - *optionPricesPtr->at(i)), 2);
-
-	meanSquareError *= averagingFactor;
-	return meanSquareError;
-}
-
-
-std::shared_ptr<std::vector<double>> PartB::optimisePartB6(const std::string & jsonInputFilePath, 
-	const double& costOfCarry, const double& discountRate, const double& initialUnderlyingPrice,
-	const double& dividendTime, const double& dividendAmount, const double& jumpTime, const double& jumpMean, const int& nTimeSteps,
-	const double& F, const double& CR, const int& N,
-	std::shared_ptr<std::vector<double>> lowerBounds, std::shared_ptr<std::vector<double>> upperBounds, const double& tolerance, int seed)
-	
-{
-	// read in the JSON option inputs
-	shared_ptr<vector<shared_ptr<double>>> optionPricesPtr;
-	shared_ptr<vector<shared_ptr<VanillaOption>>> optionsPtr;
-	tie(optionPricesPtr, optionsPtr) = AmericanOptionJSONReader(jsonInputFilePath);
-
-	auto pricingFunctionPtr = bind(meanSquaredErrorPartB6, optionPricesPtr, optionsPtr, costOfCarry, discountRate, initialUnderlyingPrice,
-		dividendTime, dividendAmount, jumpTime, jumpMean, nTimeSteps, _1, _2);
-
-	DifferentialEvolution optimiser(2, F, CR, lowerBounds, upperBounds, pricingFunctionPtr, Implementation::One, N, seed);
-	auto solution = optimiser.solve(tolerance);
-
-	return solution;
-}
-
-
-// Functions for Part B Question 7
-// ----------------------------------------------------------------------------
-
-
-// Function which revalues a set of options, and returns to mean squared error of the valuation. Used in part B7
-double PartB::meanSquaredErrorPartB7(std::shared_ptr<std::vector<std::shared_ptr<double>>> optionPricesPtr,
-	std::shared_ptr<std::vector<std::shared_ptr<instruments::VanillaOption>>> optionsPtr,
-	const double& initialUnderlyingPrice, const double& dividendTime, const double& jumpTime, const double& jumpMean, const int& nTimeSteps,
-	const std::shared_ptr<std::vector<double>>& parametersToOptimise, const int& D)
-{
-	if (optionsPtr->size() != optionPricesPtr->size())
-		throw invalid_argument("The prices do not correspond to the provided options.");
-
-	// Construct the model object
-	auto blackScholesSingleNormalJumpModel = make_shared<models::BlackScholesSingleNormalJump>(
-		parametersToOptimise->at(0), 
-		parametersToOptimise->at(1), 
-		parametersToOptimise->at(2), 
-		initialUnderlyingPrice,	UnderlyingCode::BHP, dividendTime, 
-		parametersToOptimise->at(3), 
-		jumpTime, jumpMean, 
-		parametersToOptimise->at(4));
-
-	// Construct the pricer object
-	TreePricer treePricer(blackScholesSingleNormalJumpModel);
-
-	auto meanSquareError = 0.0;
-	auto averagingFactor = 1.0 / (double)optionsPtr->size();
-	auto treePrice = treePricer.priceWithRichardsonExtrapolation(nTimeSteps, optionsPtr, true, Implementation::One, 6.0, -6.0);
-	for (int i = 0; i < optionsPtr->size(); i++)
-		meanSquareError += pow((*treePrice->at(i) - *optionPricesPtr->at(i)), 2);
-
-	meanSquareError *= averagingFactor;
-	return meanSquareError;
-}
-
-
-std::shared_ptr<std::vector<double>> PartB::optimisePartB7(const std::string & jsonInputFilePath, 
-	const double& initialUnderlyingPrice, const double& dividendTime, const double& jumpTime, const double& jumpMean, const int& nTimeSteps,
-	const double& F, const double& CR, const int& N,
-	std::shared_ptr<std::vector<double>> lowerBounds, std::shared_ptr<std::vector<double>> upperBounds, const double& tolerance, int seed)
-{
-	// read in the JSON option inputs
-	shared_ptr<vector<shared_ptr<double>>> optionPricesPtr;
-	shared_ptr<vector<shared_ptr<VanillaOption>>> optionsPtr;
-	tie(optionPricesPtr, optionsPtr) = AmericanOptionJSONReader(jsonInputFilePath);
-
-	auto pricingFunctionPtr = bind(meanSquaredErrorPartB7, optionPricesPtr, optionsPtr, initialUnderlyingPrice,
-		dividendTime, jumpTime, jumpMean, nTimeSteps, _1, _2);
-
-	DifferentialEvolution optimiser(5, F, CR, lowerBounds, upperBounds, pricingFunctionPtr, Implementation::One, N, seed);
-	auto solution = optimiser.solve(tolerance);
-
-	return solution;
-}

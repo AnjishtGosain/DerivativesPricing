@@ -54,8 +54,8 @@ namespace tests
 		// Price options
 		auto analyticPrices = analyticPricer.price(vanillaOptionsPtr);
 		auto monteCarloPrices = monteCarloPricer.price(3000000, vanillaOptionsPtr, 1);
-		auto treePricesWithoutSmoothing = treePricer.price(1.0 / 300.0, vanillaOptionsPtr, false, Implementation::One, 6.0, -6.0); // using Cox Ross Rubinstein
-		auto treePricesWithSmoothingAndRichardsonExtrapolation = treePricer.priceWithRichardsonExtrapolation(1.0 / 100.0, vanillaOptionsPtr, true,
+		auto treePricesWithoutSmoothing = treePricer.price(300, vanillaOptionsPtr, false, Implementation::One, 6.0, -6.0); // using Cox Ross Rubinstein
+		auto treePricesWithSmoothingAndRichardsonExtrapolation = treePricer.priceWithRichardsonExtrapolation(100, vanillaOptionsPtr, true,
 			Implementation::One, 6.0, -6.0);
 
 		// Check values
@@ -63,9 +63,11 @@ namespace tests
 		vector<double> absRelDiffsMonteCarlo;
 		vector<double> absRelDiffsTreeWithoutSmoothing;
 		vector<double> absRelDiffsTreeWithSmoothingAndRichardsonExtrapolation;
+
 		absRelDiffsMonteCarlo.reserve(vanillaOptionsPtr->size());
 		absRelDiffsTreeWithoutSmoothing.reserve(vanillaOptionsPtr->size());
 		absRelDiffsTreeWithSmoothingAndRichardsonExtrapolation.reserve(vanillaOptionsPtr->size());
+
 		for (int i = 0; i < vanillaOptionsPtr->size(); i++)
 		{
 			auto absRelDiffMonteCarlo = abs(100.0 * (*monteCarloPrices->at(i) - *analyticPrices->at(i)) / *analyticPrices->at(i));
@@ -79,9 +81,28 @@ namespace tests
 			absRelDiffsTreeWithoutSmoothing.push_back(move(absRelDiffTreeWithoutSmoothing));
 			absRelDiffsTreeWithSmoothingAndRichardsonExtrapolation.push_back(move(absRelDiffTreeWithSmoothingAndRichardsonExtrapolation));
 
-			// Check for 0.1% error
-			if (absRelDiffMonteCarlo > 0.1 || absRelDiffTreeWithoutSmoothing > 0.2 || absRelDiffTreeWithSmoothingAndRichardsonExtrapolation > 0.1)
+			// Check for 0.3% error
+			if (absRelDiffMonteCarlo > 0.3) {
 				testPass = false;
+				std::cout << "Monte Carlo Price: " << *monteCarloPrices->at(i) 
+					<< "\t Analytic Price:" << *analyticPrices->at(i)
+					<< "\t Relative Difference:" << absRelDiffMonteCarlo 
+					<< std::endl;
+			}
+			if (absRelDiffTreeWithoutSmoothing > 0.3) {
+				testPass = false;
+				std::cout << "Non Smooth Tree Price: " << *treePricesWithoutSmoothing->at(i) 
+					<< "\t Analytic Price:" << *analyticPrices->at(i)
+					<< "\t Relative Difference:" << absRelDiffTreeWithoutSmoothing
+					<< std::endl;
+			}
+			if (absRelDiffTreeWithSmoothingAndRichardsonExtrapolation > 0.3) {
+				testPass = false;
+				std::cout << "Smooth Tree Price: " << *treePricesWithSmoothingAndRichardsonExtrapolation->at(i) 
+					<< "\t Analytic Price:" << *analyticPrices->at(i)
+					<< "\t Relative Difference:" << absRelDiffTreeWithSmoothingAndRichardsonExtrapolation
+					<< std::endl;
+			}
 		}
 
 		return testPass;
@@ -113,7 +134,7 @@ namespace tests
 
 		// Price options
 		auto analyticPrices = analyticPricer.price(vanillaOptionsPtr);
-		auto treePricesWithSmoothing = treePricer.price(0.5, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0); // using Cox Ross Rubinstein
+		auto treePricesWithSmoothing = treePricer.price(1, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0); // using Cox Ross Rubinstein
 
 		// Check values
 		auto testPass = true;
@@ -125,7 +146,8 @@ namespace tests
 	}
 
 
-	//// Black Scholes Model : Comparision of European call analytic solution against American call tree solution
+	//// Black Scholes Model : Comparision of European call analytic solution against American call tree solution. It's never optimal to exercise an American
+	// call option, hence, it's price should be the same as an otherwise equivalent European call option. 
 	bool BlackScholesModelTest3()
 	{
 		// Construct Model
@@ -159,8 +181,8 @@ namespace tests
 
 		// Price options
 		auto europeanAnalyticPrices = analyticPricer.price(europeanOptionsPtr);
-		auto europeanTreePrices = treePricer.priceWithRichardsonExtrapolation(1.0 / 100.0, europeanOptionsPtr, true, Implementation::One, 6.0, -6.0);
-		auto americanTreePrices = treePricer.priceWithRichardsonExtrapolation(1.0 / 100.0, americanOptionsPtr, true, Implementation::One, 6.0, -6.0);
+		auto europeanTreePrices = treePricer.priceWithRichardsonExtrapolation(100, europeanOptionsPtr, true, Implementation::One, 6.0, -6.0);
+		auto americanTreePrices = treePricer.priceWithRichardsonExtrapolation(100, americanOptionsPtr, true, Implementation::One, 6.0, -6.0);
 
 		// Check values
 		auto testPass = true;
@@ -180,9 +202,10 @@ namespace tests
 			absRelDiffsAmericanTree.push_back(move(absRelDiffAmericanTree));
 			absRelDiffsEuropeanAmericanTree.push_back(move(absRelDiffEuropeanAmericanTree));
 
-			// Check for 0.1% error
-			if (absRelDiffEuropeanTree > 0.1 || absRelDiffAmericanTree > 0.1 || absRelDiffEuropeanAmericanTree > 0.0001)
+			// Check for 0.3% error
+			if (absRelDiffEuropeanTree > 0.3 || absRelDiffAmericanTree > 0.3 || absRelDiffEuropeanAmericanTree > 0.0001)
 				testPass = false;
+			// Lower threshold for the last because the prices should match. For the first two, there will be some simulation error. 
 		}
 		return testPass;
 	}
@@ -222,7 +245,7 @@ namespace tests
 
 		// Price options
 		auto europeanAnalyticPrices = analyticPricer.price(europeanOptionsPtr);
-		auto americanTreePrices = treePricer.priceWithRichardsonExtrapolation(1.0 / 100.0, americanOptionsPtr, true, Implementation::One, 6.0, -6.0);
+		auto americanTreePrices = treePricer.priceWithRichardsonExtrapolation(100, americanOptionsPtr, true, Implementation::One, 6.0, -6.0);
 
 		// Check values
 		auto testPass = true;

@@ -66,9 +66,9 @@ namespace tests
 		MonteCarloPricer monteCarloDoublePricer(blackScholesDoubleNormalJumpModel);
 		TreePricer treeDoublePricer(blackScholesDoubleNormalJumpModel);
 
-		auto treeSinglePrices = treeSinglePricer.priceWithRichardsonExtrapolation(1.0 / 10.0, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
+		auto treeSinglePrices = treeSinglePricer.priceWithRichardsonExtrapolation(10, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
 		auto monteCarloSinglePrices = monteCarloSinglePricer.price(5000000, vanillaOptionsPtr, 1);
-		auto treeDoublePrices = treeDoublePricer.priceWithRichardsonExtrapolation(1.0 / 10.0, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
+		auto treeDoublePrices = treeDoublePricer.priceWithRichardsonExtrapolation(10, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
 		auto monteCarloDoublePrices = monteCarloDoublePricer.price(5000000, vanillaOptionsPtr, 1);
 
 		// Measure time

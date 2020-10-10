@@ -105,7 +105,7 @@ const std::shared_ptr<std::vector<double>> optimisers::DifferentialEvolution::so
 	auto currentIteration = 0;
 	high_resolution_clock::time_point tStart = high_resolution_clock::now();
 
-	int minSolutionIndex;
+	auto minSolutionIndex = 0;
 	while (minDiff > tolerance)
 	{
 		constructDonorVectors();
@@ -229,24 +229,6 @@ void optimisers::DifferentialEvolution::constructDonorVectors()
 		swap(initialIndex[1], initialIndex[randomIndex1]);
 		swap(initialIndex[2], initialIndex[randomIndex2]);
 		swap(initialIndex[3], initialIndex[randomIndex3]);
-		/*HACK
-		initialIndex.reserve(4);
-		initialIndex.push_back(i);
-		uniform_int_distribution<int> uniformIntegerDistribution1(0, m_N - 1);
-		for (int a = 0; a < 3; a++)
-		{
-			auto hit = false;
-			while (hit == false)
-			{
-				auto randomIndex = uniformIntegerDistribution1(m_generator);
-				if (find(initialIndex.begin(), initialIndex.end(), randomIndex) == initialIndex.end())
-				{
-					initialIndex.push_back(randomIndex);
-					hit = true;
-				}
-			}
-		}
-		*/
 
 		// Mutate the random generated vectors
 		for (int j = 0; j < m_D; j++)

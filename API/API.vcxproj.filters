@@ -15,16 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="IMCSolutionAPI.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="JSONUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PartA.cpp">
+    <ClCompile Include="API.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PartB.cpp">
+    <ClCompile Include="PricingAPI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OptimiserAPI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,10 +32,10 @@
     <ClInclude Include="JSONUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PartA.h">
+    <ClInclude Include="OptimiserAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PartB.h">
+    <ClInclude Include="PricingAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

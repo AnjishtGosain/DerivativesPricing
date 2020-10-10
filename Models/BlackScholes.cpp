@@ -27,10 +27,6 @@ void models::BlackScholes::setImpliedVolatility(const double& value)
 
 void models::BlackScholes::setInitialUnderlyingPrice(const double& value)
 {
-	/* HACK!!!!
-	if (value < 0.00000001)
-		throw invalid_argument("The initial underlying price must be positive.");
-		*/
 	if (value < -0.00000001)
 		throw invalid_argument("The initial underlying price must be positive.");
 	m_initialUnderlyingPrice = value;

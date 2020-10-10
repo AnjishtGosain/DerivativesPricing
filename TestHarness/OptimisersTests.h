@@ -42,7 +42,7 @@ namespace tests
 		auto solution = optimiser.solve(0.003);
 
 		high_resolution_clock::time_point tEnd = high_resolution_clock::now();
-		std::cout << "Optimisation time" << duration_cast<milliseconds>(tEnd - tStart).count() << std::endl;
+		//std::cout << "Optimisation time" << duration_cast<milliseconds>(tEnd - tStart).count() << std::endl;
 
 		// Check values
 		auto testPass = true;

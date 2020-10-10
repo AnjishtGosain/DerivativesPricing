@@ -59,7 +59,7 @@ namespace tests
 		TreePricer treePricer(blackScholesModel);
 
 		auto analyticPrices = analyticPricer.price(vanillaOptionsPtr);
-		auto treePrices = treePricer.priceWithRichardsonExtrapolation(1.0 / 150.0, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
+		auto treePrices = treePricer.priceWithRichardsonExtrapolation(150, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
 		auto monteCarloPrices = monteCarloPricer.price(5000000, vanillaOptionsPtr, 1);
 
 
@@ -80,15 +80,15 @@ namespace tests
 		TreePricer treePricerDiv(blackScholesDividendModel);
 		MonteCarloPricer monteCarloPricerDiv(blackScholesDividendModel);
 
-		auto treePricesDiv = treePricerDiv.priceWithRichardsonExtrapolation(1.0 / 200.0, vanillaOptionsPtrDiv, true, Implementation::One, 6.0, -6.0);
+		auto treePricesDiv = treePricerDiv.priceWithRichardsonExtrapolation(200, vanillaOptionsPtrDiv, true, Implementation::One, 6.0, -6.0);
 		auto monteCarloPricesDiv = monteCarloPricerDiv.price(5000000, vanillaOptionsPtrDiv, 1);
 
 		// Measure time
 		high_resolution_clock::time_point tEnd = high_resolution_clock::now();
-		std::cout << "Price time" << duration_cast<milliseconds>(tEnd - tStart).count() << std::endl;
+		// std::cout << "Price time" << duration_cast<milliseconds>(tEnd - tStart).count() << std::endl;
 
-		// Print out values
-
+		// Print out values - for debugging
+		/*
 		for (int i = 0; i < vanillaOptionsPtr->size(); i++)
 		{
 			std::cout << "Black Scholes for option " << i + 1 << std::endl;
@@ -102,11 +102,10 @@ namespace tests
 			std::cout << std::endl;
 			std::cout << std::endl;
 		}
+		*/
 
-
-		auto testPass = true;
-		/*
 		// Check values
+		auto testPass = true;
 		vector<double> absRelDiffs;
 		absRelDiffs.reserve(vanillaOptionsPtr->size());
 		for (int i = 0; i < vanillaOptionsPtr->size(); i++)
@@ -118,7 +117,6 @@ namespace tests
 			if (absRelDiff > 0.5)
 				testPass = false;
 		}
-		*/
 		return testPass;
 	}
 }

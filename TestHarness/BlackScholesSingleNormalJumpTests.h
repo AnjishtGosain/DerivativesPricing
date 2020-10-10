@@ -50,18 +50,15 @@ namespace tests
 		auto blackScholesSingleNormalJumpModel = make_shared<models::BlackScholesSingleNormalJump>(costOfCarry, discountRate, impliedVolatility, 
 			initialUnderlyingPrice,	underlyingCode, dividendTime, dividendAmount, jumpTime, jumpMean, jumpVolatility);
 
-		//auto vanillaOption1 = make_shared<VanillaOption>(105.0, 0.5, ExerciseType::european, OptionRight::put, UnderlyingCode::BHP);
-		//auto vanillaOption2 = make_shared<VanillaOption>(90.0, 2.0, ExerciseType::european, OptionRight::put, UnderlyingCode::BHP);
-		//auto vanillaOption3 = make_shared<VanillaOption>(100.0, 0.51, ExerciseType::european, OptionRight::call, UnderlyingCode::BHP);
-		//auto vanillaOption4 = make_shared<VanillaOption>(100.0, 2.0, ExerciseType::european, OptionRight::call, UnderlyingCode::BHP);
-		//auto vanillaOption5 = make_shared<VanillaOption>(90.0, 1.0, ExerciseType::european, OptionRight::call, UnderlyingCode::BHP);
-		auto vanillaOption5 = make_shared<VanillaOption>(90.0, 0.4, ExerciseType::european, OptionRight::call, UnderlyingCode::BHP);
+		auto vanillaOption1 = make_shared<VanillaOption>(105.0, 0.5, ExerciseType::european, OptionRight::put, UnderlyingCode::BHP);
+		auto vanillaOption2 = make_shared<VanillaOption>(90.0, 2.0, ExerciseType::european, OptionRight::put, UnderlyingCode::BHP);
+		auto vanillaOption3 = make_shared<VanillaOption>(100.0, 0.51, ExerciseType::european, OptionRight::call, UnderlyingCode::BHP);
+		auto vanillaOption4 = make_shared<VanillaOption>(100.0, 2.0, ExerciseType::european, OptionRight::call, UnderlyingCode::BHP);
+		auto vanillaOption5 = make_shared<VanillaOption>(90.0, 1.0, ExerciseType::european, OptionRight::call, UnderlyingCode::BHP);
 
-		/*
 		vector<shared_ptr<VanillaOption>> vanillaOptions{ vanillaOption1, vanillaOption2, vanillaOption3, vanillaOption4, 
 			vanillaOption5 };
-			*/
-		vector<shared_ptr<VanillaOption>> vanillaOptions{ vanillaOption5 };
+		//vector<shared_ptr<VanillaOption>> vanillaOptions{ vanillaOption5 };
 		auto vanillaOptionsPtr = make_shared < vector<shared_ptr<VanillaOption>>>(move(vanillaOptions));
 
 		AnalyticPricer analyticPricer(blackScholes);
@@ -69,7 +66,7 @@ namespace tests
 		TreePricer treePricer(blackScholesSingleNormalJumpModel);
 
 		auto analyticPrices = analyticPricer.price(vanillaOptionsPtr);
-		auto treePrices = treePricer.priceWithRichardsonExtrapolation(1.0 / 20.0, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
+		auto treePrices = treePricer.priceWithRichardsonExtrapolation(20.0, vanillaOptionsPtr, true, Implementation::One, 6.0, -6.0);
 		auto monteCarloPrices = monteCarloPricer.price(5000000, vanillaOptionsPtr, 1);
 
 		// Measure time
